@@ -1,0 +1,68 @@
+.grid {
+  width: 200px;
+  height: 400px;
+  border: 1px solid red;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  background: black;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.grid div{
+    width: 20px;
+    height: 20px;
+    border: 0.1px rgb(49, 49, 49) solid;
+    box-sizing:border-box;
+}
+
+.floor {
+  border: none !important;
+}
+
+.piece {
+    background: blue;
+}
+.revealed {
+  background-image: url('portuguese-flag-6.gif');
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
+}
+.hidden {
+  display: none;
+}
+#left {
+  text-align: center;
+  float: left;
+  animation-name: spin;
+  animation-duration: 420ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear; 
+  /* transform: rotate(3deg); */
+   /* transform: rotate(0.3rad);/ */
+   /* transform: rotate(3grad); */ 
+   /* transform: rotate(.03turn);  */
+}
+#right{
+  text-align: center;
+  float: right;
+  animation-name: spin;
+  animation-duration: 420ms;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear; 
+  /* transform: rotate(3deg); */
+   /* transform: rotate(0.3rad);/ */
+   /* transform: rotate(3grad); */ 
+   /* transform: rotate(.03turn);  */
+}
+
+@keyframes spin {
+    from {
+        transform:rotate(0deg);
+    }
+    to {
+        transform:rotate(360deg);
+    }
+}
