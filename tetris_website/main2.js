@@ -1,11 +1,83 @@
 'use strict';
 
-var intervalTime = 1000;   
-var topLine = 20;
+var intervalTime = 1000;
 var intervalID;
 var currentPiece;
 var eventFire = true;
 var held, held_fire;
+var count = 0;
+var debug_flag = true;
+var score = 0; 
+
+var rotationTests = [
+    [[-1, 0],[-1, 1],[0, -2],[-1, -2]], //0 -> 1 / 2 -> 1
+    [[1, 0],[1, -1],[0, 2],[1, 2]], //1 -> 2 / 1 -> 0
+    [[1, 0],[1, 1],[0, -2],[1, -2]], //2 -> 3 / 0 -> 3
+    [[-1, 0],[-1, -1],[0, 2],[-1, 2]] // 3 -> 0 / 3 -> 2
+];
+var rotationI = [
+    [[-2, 0],[1, 0],[-2, -1],[1, 2]], // 0 -> 1 / 3 -> 2
+    [[-1, 0],[2, 0],[-1, 2],[2, -1]], // 1 -> 2 / 0 -> 3
+    [[2, 0],[-1, 0],[2, 1],[-1, -2]], // 2 -> 3 / 1 -> 0
+    [[1, 0],[-2, 0],[1, -2],[-2, 1]]  // 3 -> 0 / 2 -> 1
+];
+  //coords/index functions
+  function IX(x, y){
+    return 10 * y + x; //returns div position
+}
+
+function IC(index){
+    return [index % 10, (index - (index % 10)) / 10];
+} //returns [x, y]
+function checkPoint(x, y){
+    var squares = document.querySelectorAll(".grid div");
+    if(x > 9 || x < 0 || y > 20 || y < 0 || squares[IX(x, y)].classList.length == 1){
+        return false;
+    }
+    return true;
+}
+function check2DPointArray(array){
+    for(let i = 0; i < array.length - 1; i++){
+        if(!(checkPoint(array[i][0]) && checkPoint(array[i][1]))){
+            return false;
+        }
+    }
+    return true;
+}
+
+//block position => for each block check if there is a block in it
+// if bad then break to do next test
+// return true when thing good
+// return false if all tests fail
+function easierRotationCheck(array, group, rotationTest){
+    var arrayCopy = [...array];
+    for(var j = 0; j < 4; j++){ //rotate through tests
+        // console.log("position copy: " + arrayCopy);
+        arrayCopy = [...array];
+        // console.log("2nd position copy: " + arrayCopy);
+        for(var k = 0; k < 4; k++){//for point k
+            var pos_x = arrayCopy[k][0];
+            var pos_y = arrayCopy[k][1];
+            // console.log(`first test: ${rotationTests[group][j]}`)
+            // console.log(`x : ${pos_x + rotationTests[group][j][0]}`);
+            // console.log(`new coords for point ${k}, group ${group} test ${j}: ${pos_x + rotationTests[group][j][0]}, ${pos_y - rotationTests[group][j][1]}`)
+            // console.log(`posx: ${pos_x}, posy: ${pos_y}`)
+
+            if(!checkPoint(pos_x + rotationTest[group][j][0], pos_y - rotationTest[group][j][1])){
+                // console.log("second case triggered")
+                // console.log("_____________________________")
+                break;
+            } else {
+                arrayCopy[k] = [pos_x + rotationTest[group][j][0], pos_y - rotationTest[group][j][1]];
+                // console.log("Array[k]: " + arrayCopy[k])
+            }
+            if(k == 3){
+                return arrayCopy;
+            }
+        }
+    }
+    return false;
+}
 
 //add proper game end
 
@@ -26,7 +98,7 @@ var tShape = {
     origin: function(){
         return this.currentPos[1];
     },
-    state: 0
+    state: 0,
 };
 var leftL = {
     name: "left-l",
@@ -86,114 +158,188 @@ var square = {
 //1 = one rotation right
 //2 = 2 rotations right
 //3 = 1 rotation left
-var rotationTests = [
-    [[-1, 0],[-1, 1],[0, -2],[-1, -2]], //0 -> 1 / 2 -> 1
-    [[1, 0],[1, -1],[0, 2],[1, 2]], //1 -> 2 / 1 -> 0
-    [[1, 0],[1, 1],[0, -2],[1, -2]], //2 -> 3 / 0 -> 3
-    [[-1, 0],[-1, -1],[0, 2],[-1, 2]] // 3 -> 0 / 3 -> 2
-];
-var rotationI = [
-    [[-2, 0],[1, 0],[-2, -1],[1, 2]], // 0 -> 1 / 3 -> 2
-    [[-1, 0],[2, 0],[-1, 2],[2, -1]], // 1 -> 2 / 0 -> 3
-    [[2, 0],[-1, 0],[2, 1],[-1, -2]], // 2 -> 3 / 1 -> 0
-    [[1, 0],[-2, 0],[1, -2],[-2, 1]]  // 3 -> 0 / 2 -> 1
-];
 
 //this will be scuffed so fix this
+var default_array = [square, rightL, leftL, line, sShape, tShape, zShape];
+var change_array = [...default_array];
 function selectBlock(){
-    var value = Math.floor((Math.random() * 7) + 1);
-    switch(value){
-        case 1:
-            currentPiece = square;
-        break;
-        case 2:
-            currentPiece = zShape;
-        break;
-        case 3:
-            currentPiece = sShape;
-        break;
-        case 4:
-            currentPiece = line;
-        break;
-        case 5:
-            currentPiece = tShape;
-        break;
-        case 6:
-            currentPiece = rightL;
-        break;
-        case 7:
-            currentPiece = leftL;
-        break;
+    if(change_array.length == 0){
+        change_array = [...default_array];
     }
+    var value = Math.floor((Math.random() * change_array.length));
+    currentPiece = change_array[value];
+    change_array.splice(value, 1);
+
+    // count++;
+        // switch(value){
+        // case 1:
+        //     currentPiece = square;
+        //     break;
+        // case 2:
+        //     currentPiece = rightL;
+        //     break;
+        // case 3:
+        //     currentPiece = leftL;
+        //     break;
+        // case 4:
+        //     currentPiece = line;
+        //     break;
+        // case 5:
+        //     currentPiece = sShape;
+        //     break;
+        // case 6:
+        //     currentPiece = tShape;
+        //     break;
+        // case 7: 
+        //     currentPiece = zShape;
+        //     break;
+
+    // switch(count){
+    //     case 1:
+    //         currentPiece = square;
+    //         break;
+    //     case 2:
+    //         currentPiece = rightL;
+    //         break;
+    //     case 3:
+    //         currentPiece = leftL;
+    //         break;
+    //     case 4:
+    //         currentPiece = line;
+    //         break;
+    //     case 5:
+    //         currentPiece = line;
+    //         break;
+    //     case 6:
+    //         currentPiece = line;
+    //         break;
+    //     case 7:
+    //         currentPiece = line;
+    //         break;
+    //     case 8:
+    //         currentPiece = line;
+    //         break;
+    //     case 9:
+    //         currentPiece = leftL;
+    //         break;
+    //         case 10:
+    //         currentPiece = rightL;
+    //         break;
+    //         case 11:
+    //         currentPiece = tShape;
+    //         break;
+    //         case 12:
+    //             currentPiece = tShape;
+    //             break;
+    //             case 13:
+    //                 currentPiece = tShape;
+    //                 break;
+        
+    // }
+        // }
 }
-function clearLine(row, total){ 
+
+function incrementScore(rows){
+    switch(rows){
+        case 0:
+            break;
+        case 1:
+            score += 100;
+            break;
+        case 2:
+            score += 200;
+            break;
+        case 3:
+            score += 300;
+            break;
+        case 4:
+            score += 1000;
+            break;
+    }
+    document.getElementById("score").innerHTML = "Score: " + score;
+}
+
+function clearLine(row){ 
     var squares = document.querySelectorAll(".grid div");
     // set class to empty (done)
     // move everything above the first line down 
     // for every one, access index amount and then add linecount * 10
-    if(total > 0){
-        if(total === row * 100 + 45){
             // add logic to count rows
-            if(row < topLine || topLine == undefined){ //defines the top line of cleared lines
-                topLine = row;
-            }
-            for(var x = 0; x < 10; x++){ // removes rows
-                squares[(row * 10) + x].classList.remove("piece");
+    for(let i = row; i >= 0; i--){
+        for(let j = 0; j < 10; j++){ // removes rows
+            // squares[(row * 10) + x].removeAttribute("class");
+            var index = IX(j, i);
+            if(squares[index].classList.length === 1){
+                if(IX(j, i + 1) < 200 && i != row){
+                    // console.log(IX(x, y) + 10)
+                    squares[IX(j, i) + 10].className = squares[index].className;
+                }
+                squares[index].removeAttribute("class");
             }
         }
     }
+    // for(var y = 19; y >= 0; y--){
+    //     for(var x = 9; x >= 0; x--){
+    //         var index = IX(x, y);
+    //         if(squares[index].classList.length === 1){
+    //             if(IX(x, y + 1) < 200){
+    //                 console.log(IX(x, y) + 10)
+    //                 squares[IX(x, y) + 10].className = squares[index].className;
+    //             }
+    //             squares[index].removeAttribute("class");
+    //         }
+    //     }
+    // }
 }
 
 function lineChecker(){ // runs every time block stops
     var squares = document.querySelectorAll(".grid div");
+    var topLine = 20;
     var total = 0;
     var rowCount = 0;
-    var array = [];
 
-    for(var y = 0; y < 20; y++){
+    for(var y = 19; y >= 0; y--){
         total = 0;
         for(var x = 0; x < 10; x++){
             var index = y * 10 + x;
             if(squares[index].classList.length === 1){ //get total in row
-                total = total + index; // added values in y row
+                total++; // added values in y row
             }
             //needs to return total in row + row number
         }
-        if(total === y * 100 + 45){
+        if(total == 10){
+            clearLine(y); // quickly cycles through all 20 rows and clears combined rows
             rowCount++;
-        }
-        clearLine(y, total); // quickly cycles through all 20 rows and clears combined rows
-    }
-    if(rowCount > 0){ //run linemover when rowcount exists
-        let downCount = rowCount * 10;
-
-        for(let y = 0; y < 20; y++){
-            for(let x = 0; x < 10; x++){
-                let index = y * 10 + x;
-
-                //check topline
-                if(index < topLine * 10){
-                    if(squares[index].classList.length === 1){
-                        array.push(index); // pushes current blocks to temp array
-                    }
-
-                    squares[index].classList.remove('piece'); //removes all current blocks
-                }
+            if(topLine > y){
+                topLine = y;
             }
+            y+=1;
         }
-
-        array.forEach(elm =>
-            squares[elm + downCount].classList.add('piece')
-        );
-        //so i need to make it only do this above topLine
-        //when topLine 18 i want it to only move down the blocks above 18
-        //
-        //theoretically this should put back all the removes squares
     }
-    
-//    console.log(array);
-    rowCount = 0;
-    topLine = 20;
+    incrementScore(rowCount);
+    // if(rowCount > 0){ //run linemover when rowcount exists
+    //     incrementScore(rowCount);
+    //     let downCount = rowCount * 10;
+    //     console.log("move lines down " + rowCount + " from above " + topLine)
+
+    //     for(let y = topLine; y >= 0; y--){
+    //         if(
+
+    //         ){
+    //             for(let x = 0; x < 10; x++){
+    //                 let index = y * 10 + x;
+
+    //                 //check topline
+    //                 if(squares[index].classList.length === 1){
+    //                     if(index + downCount < 200){
+    //                     squares[index + downCount].className = squares[index].className;
+    //                     }
+    //                     squares[index].removeAttribute("class");
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 function addDiv(){
@@ -201,6 +347,9 @@ function addDiv(){
         if(i <200){
         var insertLocation = document.querySelector(".grid");
         let div = document.createElement("div");
+        // let content = document.createTextNode(i);
+        // div.appendChild(content);
+        // div.style.color = "white";
 
         insertLocation.appendChild(div);
         } else {
@@ -218,7 +367,7 @@ function defaultSetting(){
     held_fire = true;
     var squares = document.querySelectorAll(".grid div");
     currentPiece.currentPos.splice(0, 4, ...currentPiece.defaultPos);
-    currentPiece.defaultPos.forEach(index => squares[index].classList.add("piece"));
+    currentPiece.defaultPos.forEach(index => squares[index].classList.add(`${currentPiece.name}`));
     currentPiece.state = 0;
     console.log(currentPiece.currentPos)
 }
@@ -230,20 +379,20 @@ function control(e) {
     if (e.which === 39) {    //right
         if(checkDir("right")){ 
             var prevSpace = currentPiece.currentPos.splice(0, 4);
-            prevSpace.forEach(index => squares[index].classList.remove("piece"));
+            prevSpace.forEach(index => squares[index].removeAttribute("class"));
             for(var i = 0; i < 4; i++){
                 currentPiece.currentPos.push(IX(IC(prevSpace[i])[0] + 1, IC(prevSpace[i])[1]));
             }
-            currentPiece.currentPos.forEach(index => squares[index].classList.add("piece"));
+            currentPiece.currentPos.forEach(index => squares[index].classList.add(`${currentPiece.name}`));
         }
     } else if (e.which === 37) {    // left
         if(checkDir("left")){
             var prevSpace = currentPiece.currentPos.splice(0, 4);
-            prevSpace.forEach(index => squares[index].classList.remove("piece"));
+            prevSpace.forEach(index => squares[index].removeAttribute("class"));
             for(var i = 0; i < 4; i++){
                 currentPiece.currentPos.push(IX(IC(prevSpace[i])[0] - 1, IC(prevSpace[i])[1]));
             }
-            currentPiece.currentPos.forEach(index => squares[index].classList.add("piece"));
+            currentPiece.currentPos.forEach(index => squares[index].classList.add(`${currentPiece.name}`));
         }
     } else if (e.which === 40) {    // down
         if(checkDir("bottom")){
@@ -251,10 +400,10 @@ function control(e) {
                 eventFire = true;
             }
             var prevSpace = currentPiece.currentPos.splice(0, 4);
-            prevSpace.forEach(index => squares[index].classList.remove("piece"));
+            prevSpace.forEach(index => squares[index].removeAttribute("class"));
 
             prevSpace.forEach(element => currentPiece.currentPos.push(element + 10));
-            currentPiece.currentPos.forEach(index => squares[index].classList.add("piece"));
+            currentPiece.currentPos.forEach(index => squares[index].classList.add(`${currentPiece.name}`));
             clearInterval(intervalID);
             intervalID = setInterval(repeat, intervalTime);
         } else if (eventFire){
@@ -318,11 +467,11 @@ function control(e) {
             }
         }
         var prevSpace = currentPiece.currentPos.splice(0, 4);
-        prevSpace.forEach(index => squares[index].classList.remove("piece"));
+        prevSpace.forEach(index => squares[index].removeAttribute("class"));
         for(var i = 0; i < 4; i++){
             currentPiece.currentPos.push(prevSpace[i] + (lowestDif - 1) * 10);
         }
-        currentPiece.currentPos.forEach(index => squares[index].classList.add("piece"));
+        currentPiece.currentPos.forEach(index => squares[index].classList.add(`${currentPiece.name}`));
         if(squares[4].classList.length === 0){
             lineChecker();
             clearInterval(intervalID);
@@ -337,7 +486,8 @@ function control(e) {
         //tests five different positions before it gives up
         //there is a special place in hell for the I piece
         console.log(currentPiece.state);
-        var new_x, new_y, current_origin = currentPiece.origin(), k;
+        var new_x, new_y, k;
+        var current_origin = [];
         var prev_state = currentPiece.state;
         var new_state;
         var newPos = [];
@@ -347,18 +497,18 @@ function control(e) {
         } else {
             new_state = prev_state + 1;
         }
-        currentPiece.state = new_state;
 
-        console.log(`new_State: ${new_state}`)
-        console.log(`prev_State: ${prev_state}`)
-        console.log(currentPiece.state);
+        // console.log(`new_State: ${new_state}`)
+        // console.log(`prev_State: ${prev_state}`)
+        // console.log(currentPiece.state);
 
-
+        // console.log("old position: " + currentPiece.currentPos)
         if(currentPiece != line && currentPiece != square){
             for(var i = 0, len = currentPiece.currentPos.length; i < len; ++i){ //rotate all points around origin (defined in object)
-                squares[currentPiece.currentPos[i]].classList.remove("piece");
-                new_x = -(IC(currentPiece.currentPos[i])[1] - IC(current_origin)[1]) + IC(current_origin)[0]; //points relative to origin
-                new_y = (IC(currentPiece.currentPos[i])[0] - IC(current_origin)[0]) + IC(current_origin)[1];
+                squares[currentPiece.currentPos[i]].removeAttribute("class");
+                current_origin = [IC(currentPiece.origin())[0], IC(currentPiece.origin())[1]];
+                new_x = -(IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                new_y = (IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
 
                 newPos[i] = [new_x, new_y]; 
 
@@ -371,9 +521,9 @@ function control(e) {
             //if good, then make good
 
             //if need filter
+            // console.log("rotated position: " + newPos);
             if (newPos.filter(function(el){
-                if(el[0] < 0 || el[0] > 9 || el[1] < 0 || el[1] > 19 ||
-                    squares[IX(el[0], el[1])].classList.length == 1){
+                if(!checkPoint(el[0], el[1])){
                         return el;
                     } else {
                         return false
@@ -381,141 +531,63 @@ function control(e) {
                     }).length > 0){
                     console.log("a bad happened");
                     //testing rotation
-                    //we have the newpos
+                    //we have the newpoint
                     if((prev_state == 0 && new_state == 1)){
                         console.log("first ran")
-                        for(var j = 0; j <= 4; ++j){ //rotate through tests
-                            if(k == 4 || j == 4){
-                                if(j==4){
-                                    currentPiece.state -= 1;
-                                }
-                                console.log("exit rotation loop");
-                                break;
-                            }
-                            for(k = 0; k < len; ++k){//for point k
-                                var pos_x = newPos[k][0];
-                                var pos_y = newPos[k][1];
-                                console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationTests[0][j][0]}, ${pos_y - rotationTests[0][j][1]}`)
-                                console.log(`posx: ${pos_x}, posy: ${pos_y}`)
-
-                                if(
-                                pos_x + rotationTests[0][j][0] < 0 || pos_x + rotationTests[0][j][0] > 9 ||
-                                pos_y - rotationTests[0][j][1] < 0 || pos_y - rotationTests[0][j][1] > 19 ||
-                                squares[IX(pos_x + rotationTests[0][j][0], pos_y - rotationTests[0][j][1])].classList.length == 1){
-                                    console.log("second case triggered")
-                                    k -= 1;
-                                    break;
-                                } else {
-                                    console.log("worky")
-                                    currentPiece.currentPos[k] = IX(pos_x + rotationTests[0][j][0], pos_y - rotationTests[0][j][1]);
-                                }
-                            }
-                        }
+                        newPos = easierRotationCheck(newPos, 0, rotationTests);
                     } else if((prev_state == 1 && new_state == 2)){
                         console.log("second ran")
-                        for(var j = 0; j <= 4; ++j){ //rotate through tests
-                            if(k == 4 || j == 4){
-                                if(j==4){
-                                    currentPiece.state -= 1;
-                                }
-                                console.log("exit rotation loop");
-                                break;
-                            }
-                            for(k = 0; k < len; ++k){//for point k
-                                var pos_x = newPos[k][0];
-                                var pos_y = newPos[k][1];
-                                console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationTests[1][j][0]}, ${pos_y - rotationTests[1][j][1]}`)
-                                console.log(`posx: ${pos_x}, posy: ${pos_y}`)
-
-                                if(
-                                pos_x + rotationTests[1][j][0] < 0 || pos_x + rotationTests[1][j][0] > 9 ||
-                                pos_y - rotationTests[1][j][1] < 0 || pos_y - rotationTests[1][j][1] > 19 ||
-                                squares[IX(pos_x + rotationTests[1][j][0], pos_y - rotationTests[1][j][1])].classList.length == 1){
-                                    console.log("second case triggered")
-                                    k -= 1;
-                                    break;
-                                } else {
-                                    console.log("worky")
-                                    currentPiece.currentPos[k] = IX(pos_x + rotationTests[1][j][0], pos_y - rotationTests[1][j][1]);
-                                }
-                            }
-                        }
-                        
+                        newPos = easierRotationCheck(newPos, 1, rotationTests);
                     } else if((prev_state == 2 && new_state == 3)){
                         console.log("third ran")
-                        for(var j = 0; j <= 4; ++j){ //rotate through tests
-                            if(k == 4 || j == 4){
-                                if(j==4){
-                                    currentPiece.state -= 1;
-                                }
-                                console.log("exit rotation loop");
-                                break;
-                            }
-                            for(k = 0; k < len; ++k){//for point k
-                                var pos_x = newPos[k][0];
-                                var pos_y = newPos[k][1];
-                                console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationTests[2][j][0]}, ${pos_y - rotationTests[2][j][1]}`)
-                                console.log(`posx: ${pos_x}, posy: ${pos_y}`)
-
-                                if(
-                                pos_x + rotationTests[2][j][0] < 0 || pos_x + rotationTests[2][j][0] > 9 ||
-                                pos_y - rotationTests[2][j][1] < 0 || pos_y - rotationTests[2][j][1] > 19 ||
-                                squares[IX(pos_x + rotationTests[1][j][0], pos_y - rotationTests[2][j][1])].classList.length == 1){
-                                    console.log("second case triggered")
-                                    k -= 1;
-                                    break;
-                                } else {
-                                    console.log("worky")
-                                    currentPiece.currentPos[k] = IX(pos_x + rotationTests[2][j][0], pos_y - rotationTests[2][j][1]);
-                                }
-                            }
-                        }
+                        newPos = easierRotationCheck(newPos, 2, rotationTests);
                     } else if((prev_state == 3 && new_state == 0)){
                         console.log("fourth ran")
-                        for(var j = 0; j <= 4; ++j){ //rotate through tests
-                            if(k == 4 || j == 4){
-                                if(j==4){
-                                    currentPiece.state -= 1;
-                                }
-                                console.log("exit rotation loop");
-                                break;
-                            }
-                            for(k = 0; k < len; ++k){//for point k
-                                var pos_x = newPos[k][0];
-                                var pos_y = newPos[k][1];
-                                console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationTests[3][j][0]}, ${pos_y - rotationTests[3][j][1]}`)
-                                console.log(`posx: ${pos_x}, posy: ${pos_y}`)
-
-                                if(
-                                pos_x + rotationTests[3][j][0] < 0 || pos_x + rotationTests[3][j][0] > 9 ||
-                                pos_y - rotationTests[3][j][1] < 0 || pos_y - rotationTests[3][j][1] > 19 ||
-                                squares[IX(pos_x + rotationTests[3][j][0], pos_y - rotationTests[3][j][1])].classList.length == 1){
-                                    console.log("second case triggered")
-                                    k -= 1;
-                                    break;
-                                } else {
-                                    console.log("worky")
-                                    currentPiece.currentPos[k] = IX(pos_x + rotationTests[3][j][0], pos_y - rotationTests[3][j][1]);
-                                }
-                            }
+                        // console.log("Easier rotation: " + easierRotationCheck(newPos, 3));
+                        newPos = easierRotationCheck(newPos, 3, rotationTests);
+                    }
+                    // console.log("Block Position: " + newPos)
+                    if(newPos){
+                        for(var j = 0; j < 4; ++j){
+                            currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
                         }
+                        currentPiece.state = new_state;
                     }
             } else {
                 for(var j = 0; j < 4; ++j){
                     currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
                 }
+                currentPiece.state = new_state;
             }
         } else if(currentPiece == line){
             for(var i = 0, len = currentPiece.currentPos.length; i < len; ++i){ //rotate all points around origin (defined in object)
-                squares[currentPiece.currentPos[i]].classList.remove("piece");
-                new_x = -(IC(currentPiece.currentPos[i])[1] - IC(current_origin)[1]) + IC(current_origin)[0]; //points relative to origin
-                new_y = (IC(currentPiece.currentPos[i])[0] - IC(current_origin)[0]) + IC(current_origin)[1];
+                squares[currentPiece.currentPos[i]].removeAttribute("class");
+                
+                if(prev_state == 0){
+                    current_origin = [(IC(currentPiece.currentPos[1])[0] + IC(currentPiece.currentPos[2])[0])/2, (IC(currentPiece.currentPos[1])[1] + IC(currentPiece.currentPos[1])[1] + 1) / 2];
+                    new_x = -(IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                    new_y = (IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
+                } else if(prev_state == 1){
+                    current_origin = [(IC(currentPiece.currentPos[1])[0] + IC(currentPiece.currentPos[1])[0] - 1)/2, (IC(currentPiece.currentPos[1])[1] + IC(currentPiece.currentPos[2])[1])/2];
+                    new_x = -(IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                    new_y = (IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
+                } else if(prev_state == 2){
+                    current_origin = [(IC(currentPiece.currentPos[1])[0] + IC(currentPiece.currentPos[2])[0])/2, (IC(currentPiece.currentPos[1])[1] + IC(currentPiece.currentPos[1])[1] - 1) / 2];
+                    new_x = -(IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                    new_y = (IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
+                } else if(prev_state == 3){
+                    current_origin = [(IC(currentPiece.currentPos[1])[0] + IC(currentPiece.currentPos[1])[0] + 1)/2, (IC(currentPiece.currentPos[1])[1] + IC(currentPiece.currentPos[2])[1])/2];
+                    new_x = -(IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                    new_y = (IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
+                }   
 
                 newPos[i] = [new_x, new_y]; 
+                console.log(`newpos: ${newPos}`);
+                console.log(`origin: ${current_origin}`);
             }
+
             if (newPos.filter(function(el){
-                if(el[0] < 0 || el[0] > 9 || el[1] < 0 || el[1] > 19 ||
-                    squares[IX(el[0], el[1])].classList.length == 1){
+                if(!checkPoint(el[0], el[1])){
                         return el;
                     } else {
                         return false
@@ -523,143 +595,48 @@ function control(e) {
                     }).length > 0){
                     console.log("a bad happened");
                     //testing rotation
-                    //we have the newpos
+                    //we have the newpoint
                     if((prev_state == 0 && new_state == 1)){
                         console.log("first ran")
-                        for(var j = 0; j <= 4; ++j){ //rotate through tests
-                            if(k == 4 || j == 4){
-                                if(j==4){
-                                    currentPiece.state -= 1;
-                                }
-                                console.log("exit rotation loop");
-                                break;
-                            }
-                            for(k = 0; k < len; ++k){//for point k
-                                var pos_x = newPos[k][0];
-                                var pos_y = newPos[k][1];
-                                console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationTests[0][j][0]}, ${pos_y - rotationTests[0][j][1]}`)
-                                console.log(`posx: ${pos_x}, posy: ${pos_y}`)
-
-                                if(
-                                pos_x + rotationTests[0][j][0] < 0 || pos_x + rotationTests[0][j][0] > 9 ||
-                                pos_y - rotationTests[0][j][1] < 0 || pos_y - rotationTests[0][j][1] > 19 ||
-                                squares[IX(pos_x + rotationTests[0][j][0], pos_y - rotationTests[0][j][1])].classList.length == 1){
-                                    console.log("second case triggered")
-                                    k -= 1;
-                                    break;
-                                } else {
-                                    console.log("worky")
-                                    currentPiece.currentPos[k] = IX(pos_x + rotationTests[0][j][0], pos_y - rotationTests[0][j][1]);
-                                }
-                            }
-                        }
+                        newPos = easierRotationCheck(newPos, 0, rotationI);
                     } else if((prev_state == 1 && new_state == 2)){
                         console.log("second ran")
-                        for(var j = 0; j <= 4; ++j){ //rotate through tests
-                            if(k == 4 || j == 4){
-                                if(j==4){
-                                    currentPiece.state -= 1;
-                                }
-                                console.log("exit rotation loop");
-                                break;
-                            }
-                            for(k = 0; k < len; ++k){//for point k
-                                var pos_x = newPos[k][0];
-                                var pos_y = newPos[k][1];
-                                console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationTests[1][j][0]}, ${pos_y - rotationTests[1][j][1]}`)
-                                console.log(`posx: ${pos_x}, posy: ${pos_y}`)
-
-                                if(
-                                pos_x + rotationTests[1][j][0] < 0 || pos_x + rotationTests[1][j][0] > 9 ||
-                                pos_y - rotationTests[1][j][1] < 0 || pos_y - rotationTests[1][j][1] > 19 ||
-                                squares[IX(pos_x + rotationTests[1][j][0], pos_y - rotationTests[1][j][1])].classList.length == 1){
-                                    console.log("second case triggered")
-                                    k -= 1;
-                                    break;
-                                } else {
-                                    console.log("worky")
-                                    currentPiece.currentPos[k] = IX(pos_x + rotationTests[1][j][0], pos_y - rotationTests[1][j][1]);
-                                }
-                            }
-                        }
-                        
+                        newPos = easierRotationCheck(newPos, 1, rotationI);
                     } else if((prev_state == 2 && new_state == 3)){
                         console.log("third ran")
-                        for(var j = 0; j <= 4; ++j){ //rotate through tests
-                            if(k == 4 || j == 4){
-                                if(j==4){
-                                    currentPiece.state -= 1;
-                                }
-                                console.log("exit rotation loop");
-                                break;
-                            }
-                            for(k = 0; k < len; ++k){//for point k
-                                var pos_x = newPos[k][0];
-                                var pos_y = newPos[k][1];
-                                console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationTests[2][j][0]}, ${pos_y - rotationTests[2][j][1]}`)
-                                console.log(`posx: ${pos_x}, posy: ${pos_y}`)
-
-                                if(
-                                pos_x + rotationTests[2][j][0] < 0 || pos_x + rotationTests[2][j][0] > 9 ||
-                                pos_y - rotationTests[2][j][1] < 0 || pos_y - rotationTests[2][j][1] > 19 ||
-                                squares[IX(pos_x + rotationTests[1][j][0], pos_y - rotationTests[2][j][1])].classList.length == 1){
-                                    console.log("second case triggered")
-                                    k -= 1;
-                                    break;
-                                } else {
-                                    console.log("worky")
-                                    currentPiece.currentPos[k] = IX(pos_x + rotationTests[2][j][0], pos_y - rotationTests[2][j][1]);
-                                }
-                            }
-                        }
+                        newPos = easierRotationCheck(newPos, 2, rotationI);
                     } else if((prev_state == 3 && new_state == 0)){
                         console.log("fourth ran")
-                        for(var j = 0; j <= 4; ++j){ //rotate through tests
-                            if(k == 4 || j == 4){
-                                if(j==4){
-                                    currentPiece.state -= 1;
-                                }
-                                console.log("exit rotation loop");
-                                break;
-                            }
-                            for(k = 0; k < len; ++k){//for point k
-                                var pos_x = newPos[k][0];
-                                var pos_y = newPos[k][1];
-                                console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationTests[3][j][0]}, ${pos_y - rotationTests[3][j][1]}`)
-                                console.log(`posx: ${pos_x}, posy: ${pos_y}`)
-
-                                if(
-                                pos_x + rotationTests[3][j][0] < 0 || pos_x + rotationTests[3][j][0] > 9 ||
-                                pos_y - rotationTests[3][j][1] < 0 || pos_y - rotationTests[3][j][1] > 19 ||
-                                squares[IX(pos_x + rotationTests[3][j][0], pos_y - rotationTests[3][j][1])].classList.length == 1){
-                                    console.log("second case triggered")
-                                    k -= 1;
-                                    break;
-                                } else {
-                                    console.log("worky")
-                                    currentPiece.currentPos[k] = IX(pos_x + rotationTests[3][j][0], pos_y - rotationTests[3][j][1]);
-                                }
-                            }
+                        // console.log("Easier rotation: " + easierRotationCheck(newPos, 3));
+                        newPos = easierRotationCheck(newPos, 3, rotationI);
+                    }
+                    // console.log("Block Position: " + newPos)
+                    if(newPos){
+                        for(var j = 0; j < 4; ++j){
+                            currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
                         }
+                        currentPiece.state = new_state;
                     }
             } else {
                 for(var j = 0; j < 4; ++j){
                     currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
                 }
             }
+            currentPiece.state = new_state;
         }
 
         for(var i = 0, len = currentPiece.currentPos.length; i < len; ++i){
-            squares[currentPiece.currentPos[i]].classList.add("piece")
+            squares[currentPiece.currentPos[i]].classList.add(`${currentPiece.name}`)
         }
     } else if(e.which === 90){ // z, rotating 90 degrees counterclockwise
         //in srs, when the normal rotation is obstructed
         //tests five different positions before it gives up
         //there is a special place in hell for the I piece
-        var new_x, new_y, current_origin = currentPiece.origin(), k;
+        var new_x, new_y, k;
         var prev_state = currentPiece.state;
         var new_state;
         var newPos = [];
+        var current_origin = [];
         //if prev state is 0, then set newstate to 3 and then when new state is 2 set prev state to 3
         if(prev_state == 0){
             new_state = 3;
@@ -672,9 +649,10 @@ function control(e) {
 
         if(currentPiece != line && currentPiece != square){
             for(var i = 0, len = currentPiece.currentPos.length; i < len; ++i){ //rotate all points around origin (defined in object)
-                squares[currentPiece.currentPos[i]].classList.remove("piece");
-                new_x = (IC(currentPiece.currentPos[i])[1] - IC(current_origin)[1]) + IC(current_origin)[0]; //points relative to origin
-                new_y = -(IC(currentPiece.currentPos[i])[0] - IC(current_origin)[0]) + IC(current_origin)[1];
+                squares[currentPiece.currentPos[i]].removeAttribute("class");
+                current_origin = [IC(currentPiece.origin())[0], IC(currentPiece.origin())[1]];
+                new_x = (IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                new_y = -(IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
 
                 newPos[i] = [new_x, new_y]; 
             }
@@ -805,15 +783,173 @@ function control(e) {
                     currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
                 }
             }
+        }  else if(currentPiece == line){
+            for(var i = 0, len = currentPiece.currentPos.length; i < len; ++i){ //rotate all points around origin (defined in object)
+            squares[currentPiece.currentPos[i]].removeAttribute("class");
+            
+            if(prev_state == 0){
+                current_origin = [(IC(currentPiece.currentPos[1])[0] + IC(currentPiece.currentPos[2])[0])/2, (IC(currentPiece.currentPos[1])[1] + IC(currentPiece.currentPos[1])[1] + 1) / 2];
+                new_x = (IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                new_y = -(IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
+            } else if(prev_state == 1){
+                current_origin = [(IC(currentPiece.currentPos[1])[0] + IC(currentPiece.currentPos[1])[0] - 1)/2, (IC(currentPiece.currentPos[1])[1] + IC(currentPiece.currentPos[2])[1])/2];
+                new_x = (IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                new_y = -(IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
+            } else if(prev_state == 2){
+                current_origin = [(IC(currentPiece.currentPos[1])[0] + IC(currentPiece.currentPos[2])[0])/2, (IC(currentPiece.currentPos[1])[1] + IC(currentPiece.currentPos[1])[1] - 1) / 2];
+                new_x = (IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                new_y = -(IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
+            } else if(prev_state == 3){
+                current_origin = [(IC(currentPiece.currentPos[1])[0] + IC(currentPiece.currentPos[1])[0] + 1)/2, (IC(currentPiece.currentPos[1])[1] + IC(currentPiece.currentPos[2])[1])/2];
+                new_x = (IC(currentPiece.currentPos[i])[1] - current_origin[1]) + current_origin[0]; //points relative to origin
+                new_y = -(IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
+            }   
+
+            newPos[i] = [new_x, new_y]; 
         }
+        if (newPos.filter(function(el){
+            if(el[0] < 0 || el[0] > 9 || el[1] < 0 || el[1] > 19 ||
+                squares[IX(el[0], el[1])].classList.length == 1){
+                    return el;
+                } else {
+                    return false
+                }
+                }).length > 0){
+                console.log("a bad happened");
+                //testing rotation
+                //we have the newpos
+                if((prev_state == 3 && new_state == 2)){
+                    console.log("first ran")
+                    for(var j = 0; j <= 4; ++j){ //rotate through tests
+                        if(k == 4 || j == 4){
+                            if(j==4){
+                                currentPiece.state -= 1;
+                            }
+                            console.log("exit rotation loop");
+                            break;
+                        }
+                        for(k = 0; k < len; ++k){//for point k
+                            var pos_x = newPos[k][0];
+                            var pos_y = newPos[k][1];
+                            console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationI[0][j][0]}, ${pos_y - rotationI[0][j][1]}`)
+                            console.log(`posx: ${pos_x}, posy: ${pos_y}`)
+
+                            if(
+                            pos_x + rotationI[0][j][0] < 0 || pos_x + rotationI[0][j][0] > 9 ||
+                            pos_y - rotationI[0][j][1] < 0 || pos_y - rotationI[0][j][1] > 19 ||
+                            squares[IX(pos_x + rotationI[0][j][0], pos_y - rotationI[0][j][1])].classList.length == 1){
+                                console.log("second case triggered")
+                                k -= 1;
+                                break;
+                            } else {
+                                console.log("worky")
+                                currentPiece.currentPos[k] = IX(pos_x + rotationI[0][j][0], pos_y - rotationI[0][j][1]);
+                            }
+                        }
+                    }
+                } else if((prev_state == 0 && new_state == 3)){
+                    console.log("second ran")
+                    for(var j = 0; j <= 4; ++j){ //rotate through tests
+                        if(k == 4 || j == 4){
+                            if(j==4){
+                                currentPiece.state -= 1;
+                            }
+                            console.log("exit rotation loop");
+                            break;
+                        }
+                        for(k = 0; k < len; ++k){//for point k
+                            var pos_x = newPos[k][0];
+                            var pos_y = newPos[k][1];
+                            console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationI[1][j][0]}, ${pos_y - rotationI[1][j][1]}`)
+                            console.log(`posx: ${pos_x}, posy: ${pos_y}`)
+
+                            if(
+                            pos_x + rotationI[1][j][0] < 0 || pos_x + rotationI[1][j][0] > 9 ||
+                            pos_y - rotationI[1][j][1] < 0 || pos_y - rotationI[1][j][1] > 19 ||
+                            squares[IX(pos_x + rotationI[1][j][0], pos_y - rotationI[1][j][1])].classList.length == 1){
+                                console.log("second case triggered")
+                                k -= 1;
+                                break;
+                            } else {
+                                console.log("worky")
+                                currentPiece.currentPos[k] = IX(pos_x + rotationI[1][j][0], pos_y - rotationI[1][j][1]);
+                            }
+                        }
+                    }
+                    
+                } else if((prev_state == 1 && new_state == 0)){
+                    console.log("third ran")
+                    for(var j = 0; j <= 4; ++j){ //rotate through tests
+                        if(k == 4 || j == 4){
+                            if(j==4){
+                                currentPiece.state -= 1;
+                            }
+                            console.log("exit rotation loop");
+                            break;
+                        }
+                        for(k = 0; k < len; ++k){//for point k
+                            var pos_x = newPos[k][0];
+                            var pos_y = newPos[k][1];
+                            console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationI[2][j][0]}, ${pos_y - rotationI[2][j][1]}`)
+                            console.log(`posx: ${pos_x}, posy: ${pos_y}`)
+
+                            if(
+                            pos_x + rotationI[2][j][0] < 0 || pos_x + rotationI[2][j][0] > 9 ||
+                            pos_y - rotationI[2][j][1] < 0 || pos_y - rotationI[2][j][1] > 19 ||
+                            squares[IX(pos_x + rotationI[1][j][0], pos_y - rotationI[2][j][1])].classList.length == 1){
+                                console.log("second case triggered")
+                                k -= 1;
+                                break;
+                            } else {
+                                console.log("worky")
+                                currentPiece.currentPos[k] = IX(pos_x + rotationI[2][j][0], pos_y - rotationI[2][j][1]);
+                            }
+                        }
+                    }
+                } else if((prev_state == 2 && new_state == 1)){
+                    console.log("fourth ran")
+                    for(var j = 0; j <= 4; ++j){ //rotate through tests
+                        if(k == 4 || j == 4){
+                            if(j==4){
+                                currentPiece.state -= 1;
+                            }
+                            console.log("exit rotation loop");
+                            break;
+                        }
+                        for(k = 0; k < len; ++k){//for point k
+                            var pos_x = newPos[k][0];
+                            var pos_y = newPos[k][1];
+                            console.log(`new coords for point ${k} test ${j}: ${pos_x + rotationI[3][j][0]}, ${pos_y - rotationI[3][j][1]}`)
+                            console.log(`posx: ${pos_x}, posy: ${pos_y}`)
+
+                            if(
+                            pos_x + rotationI[3][j][0] < 0 || pos_x + rotationI[3][j][0] > 9 ||
+                            pos_y - rotationI[3][j][1] < 0 || pos_y - rotationI[3][j][1] > 19 ||
+                            squares[IX(pos_x + rotationI[3][j][0], pos_y - rotationI[3][j][1])].classList.length == 1){
+                                console.log("second case triggered")
+                                k -= 1;
+                                break;
+                            } else {
+                                console.log("worky")
+                                currentPiece.currentPos[k] = IX(pos_x + rotationI[3][j][0], pos_y - rotationI[3][j][1]);
+                            }
+                        }
+                    }
+                }
+        } else {
+        for(var j = 0; j < 4; ++j){
+            currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
+        }
+    }
+    }
 
         for(var i = 0, len = currentPiece.currentPos.length; i < len; ++i){
-            squares[currentPiece.currentPos[i]].classList.add("piece")
+            squares[currentPiece.currentPos[i]].classList.add(`${currentPiece.name}`)
         }
     } else if(e.which === 67){
         if(held_fire == true){
             for(var i = 0; i < 4; ++i){
-                squares[currentPiece.currentPos[i]].classList.remove("piece")
+                squares[currentPiece.currentPos[i]].removeAttribute("class");
             }
             if(held == undefined){ //nothing held
                 held = currentPiece;
@@ -879,15 +1015,6 @@ function control(e) {
         }
     }
 }
-
-  //coords/index functions
-function IX(x, y){
-    return 10 * y + x; //returns div position
-}
-
-function IC(index){
-    return [index % 10, (index - (index % 10)) / 10];
-} //returns [x, y]
 
 //this allows us to rewrite the hitboxes such that rotated blocks will still have hitboxes (theoretically)
 function checkDir(dir){
@@ -1023,11 +1150,11 @@ function repeat(){
     if(checkDir("bottom")){
         var squares = document.querySelectorAll(".grid div");
         var prevSpace = currentPiece.currentPos.splice(0, 4);
-        prevSpace.forEach(index => squares[index].classList.remove("piece"));
+        prevSpace.forEach(index => squares[index].removeAttribute("class"));
         for(var i = 0; i < 4; i++){
             currentPiece.currentPos.push(prevSpace[i] + 10);
         }
-        currentPiece.currentPos.forEach(index => squares[index].classList.add("piece"));
+        currentPiece.currentPos.forEach(index => squares[index].classList.add(`${currentPiece.name}`));
     } else {
         if(squares[4].classList.length === 0){
             lineChecker();
@@ -1037,6 +1164,8 @@ function repeat(){
             defaultSetting();
         } else {
             clearInterval(intervalID); //kill the game
+            removeEventListener("keydown", control)
+            return;
         }
     }
 }
@@ -1044,6 +1173,21 @@ function repeat(){
 function game(){
     addDiv();
     document.addEventListener("keydown", control);
+    document.getElementById("debug").onclick = function(){
+        var squares = document.querySelectorAll(".grid div");
+        if(debug_flag){
+                    for(let i = 0; i < 200; i++){
+            squares[i].removeChild(squares[i].firstChild);
+        }
+        } else {
+                        for(let i = 0; i < 200; i++){
+            let content = document.createTextNode(i);
+            squares[i].appendChild(content);
+            squares[i].style.color = "white";
+            }
+        }
+        debug_flag = !debug_flag
+    }
     selectBlock();
     defaultSetting();
     console.log("pemnis)");
@@ -1051,3 +1195,24 @@ function game(){
 }
 
 game();
+
+
+// (function(){
+//     var flag = true;
+//     var squares = document.querySelectorAll(".grid div");
+//       if(flag)
+//       {
+//         for(let i = 0; i < 200; i++){
+//             squares[i].removeChild(squares[i].firstChild);
+//         }
+//       }
+//       else
+//         {
+//             for(let i = 0; i < 200; i++){
+//             let content = document.createTextNode(i);
+//             squares[i].appendChild(content);
+//             squares[i].style.color = "white";
+//             }
+//           flag = true;
+//         }
+//     }());
