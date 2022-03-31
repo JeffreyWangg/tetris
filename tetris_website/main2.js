@@ -52,24 +52,15 @@ function check2DPointArray(array){
 function easierRotationCheck(array, group, rotationTest){
     var arrayCopy = [...array];
     for(var j = 0; j < 4; j++){ //rotate through tests
-        // console.log("position copy: " + arrayCopy);
         arrayCopy = [...array];
-        // console.log("2nd position copy: " + arrayCopy);
         for(var k = 0; k < 4; k++){//for point k
             var pos_x = arrayCopy[k][0];
             var pos_y = arrayCopy[k][1];
-            // console.log(`first test: ${rotationTests[group][j]}`)
-            // console.log(`x : ${pos_x + rotationTests[group][j][0]}`);
-            // console.log(`new coords for point ${k}, group ${group} test ${j}: ${pos_x + rotationTests[group][j][0]}, ${pos_y - rotationTests[group][j][1]}`)
-            // console.log(`posx: ${pos_x}, posy: ${pos_y}`)
 
             if(!checkPoint(pos_x + rotationTest[group][j][0], pos_y - rotationTest[group][j][1])){
-                // console.log("second case triggered")
-                // console.log("_____________________________")
                 break;
             } else {
                 arrayCopy[k] = [pos_x + rotationTest[group][j][0], pos_y - rotationTest[group][j][1]];
-                // console.log("Array[k]: " + arrayCopy[k])
             }
             if(k == 3){
                 return arrayCopy;
@@ -115,18 +106,6 @@ function returnImpBlocks(array){
     
     return impBlocks;
 }
-
-//add proper game end
-
-//rotate mathematically
-//if left side, wall kick by adding onto block until not negative
-//if right side, wall kick by subtracting from block until in range
-//i piece will be hell
-
-//for harddrop, get the most important piece and then find the difference between it and the baseline
-//and add that to the rest of the blocks
-
-//use map/filter instead of for loops?
 
 var tShape = {
     name: "t-shape",
@@ -194,12 +173,7 @@ var square = {
 var shadowPiece = {
     currentPos: [],
 }
-//0 = spawn state
-//1 = one rotation right
-//2 = 2 rotations right
-//3 = 1 rotation left
 
-//this will be scuffed so fix this
 var default_array = [square, rightL, leftL, line, sShape, tShape, zShape];
 var change_array = [...default_array];
 function selectBlock(){
@@ -209,74 +183,6 @@ function selectBlock(){
     var value = Math.floor((Math.random() * change_array.length));
     currentPiece = change_array[value];
     change_array.splice(value, 1);
-
-    // count++;
-        // switch(value){
-        // case 1:
-        //     currentPiece = square;
-        //     break;
-        // case 2:
-        //     currentPiece = rightL;
-        //     break;
-        // case 3:
-        //     currentPiece = leftL;
-        //     break;
-        // case 4:
-        //     currentPiece = line;
-        //     break;
-        // case 5:
-        //     currentPiece = sShape;
-        //     break;
-        // case 6:
-        //     currentPiece = tShape;
-        //     break;
-        // case 7: 
-        //     currentPiece = zShape;
-        //     break;
-
-    // switch(count){
-    //     case 1:
-    //         currentPiece = square;
-    //         break;
-    //     case 2:
-    //         currentPiece = rightL;
-    //         break;
-    //     case 3:
-    //         currentPiece = leftL;
-    //         break;
-    //     case 4:
-    //         currentPiece = line;
-    //         break;
-    //     case 5:
-    //         currentPiece = line;
-    //         break;
-    //     case 6:
-    //         currentPiece = line;
-    //         break;
-    //     case 7:
-    //         currentPiece = line;
-    //         break;
-    //     case 8:
-    //         currentPiece = line;
-    //         break;
-    //     case 9:
-    //         currentPiece = leftL;
-    //         break;
-    //         case 10:
-    //         currentPiece = rightL;
-    //         break;
-    //         case 11:
-    //         currentPiece = tShape;
-    //         break;
-    //         case 12:
-    //             currentPiece = tShape;
-    //             break;
-    //             case 13:
-    //                 currentPiece = tShape;
-    //                 break;
-        
-    // }
-        // }
 }
 
 function incrementScore(rows){
@@ -301,17 +207,11 @@ function incrementScore(rows){
 
 function clearLine(row){ 
     var squares = document.querySelectorAll(".grid div");
-    // set class to empty (done)
-    // move everything above the first line down 
-    // for every one, access index amount and then add linecount * 10
-            // add logic to count rows
     for(let i = row; i >= 0; i--){
         for(let j = 0; j < 10; j++){ // removes rows
-            // squares[(row * 10) + x].removeAttribute("class");
             var index = IX(j, i);
             if(squares[index].classList.contains("piece")){
                 if(IX(j, i + 1) < 200 && i != row){
-                    // console.log(IX(x, y) + 10)
                     squares[IX(j, i) + 10].className = squares[index].className;
                 }
                 squares[index].removeAttribute("class");
@@ -332,8 +232,7 @@ function lineChecker(){ // runs every time block stops
             var index = y * 10 + x;
             if(squares[index].classList.contains("piece")){ //get total in row
                 total++; // added values in y row
-            }
-            //needs to return total in row + row number
+            }            //needs to return total in row + row number
         }
         if(total == 10){
             clearLine(y); // quickly cycles through all 20 rows and clears combined rows
@@ -352,10 +251,6 @@ function addDiv(){
         if(i <200){
         var insertLocation = document.querySelector(".grid");
         let div = document.createElement("div");
-        // let content = document.createTextNode(i);
-        // div.appendChild(content);
-        // div.style.color = "white";
-
         insertLocation.appendChild(div);
         } else {
             var insertLocation = document.querySelector(".grid");
@@ -375,7 +270,6 @@ function defaultSetting(){
     currentPiece.defaultPos.forEach(index => squares[index].classList.add(`${currentPiece.name}`, "piece"));
     currentPiece.state = 0;
     console.log(currentPiece.currentPos)
-    // shadowPiece.currentPos = currentPiece.currentPos;
     shadow();
 }
 
@@ -427,11 +321,6 @@ function control(e) {
         }
     } else if(e.which === 32) { // space
         var impBlocks = returnImpBlocks(currentPiece.currentPos);
-
-        //for each block in impblocks
-        //find difference between it and the block below it
-        //select the block with the lowest difference
-        //place block to that baseline and align rest using the difference
         var lowestDif = 20;
         for(var i = 0, len = impBlocks.length; i < len; ++i){
             for(var y = IC(impBlocks[i])[1] + 1; y <= 20; ++y){
@@ -461,27 +350,17 @@ function control(e) {
             clearInterval(intervalID); //kill the game (kinda)
         }
     } else if(e.which === 38){ // up, rotating 90 degrees clockwise
-        //in srs, when the normal rotation is obstructed
-        //tests five different positions before it gives up
-        //there is a special place in hell for the I piece
-        // console.log(currentPiece.state);
         var new_x, new_y, k;
         var current_origin = [];
         var prev_state = currentPiece.state;
         var new_state;
         var newPos = [];
-        //if prev state is 3, then set newstate to 0 and then when new state is 1 set prev state to 0
         if(prev_state == 3){
             new_state = 0;
         } else {
             new_state = prev_state + 1;
         }
 
-        // console.log(`new_State: ${new_state}`)
-        // console.log(`prev_State: ${prev_state}`)
-        // console.log(currentPiece.state);
-
-        // console.log("old position: " + currentPiece.currentPos)
         if(currentPiece != line && currentPiece != square){
             for(var i = 0, len = currentPiece.currentPos.length; i < len; ++i){ //rotate all points around origin (defined in object)
                 squares[currentPiece.currentPos[i]].removeAttribute("class");
@@ -490,17 +369,7 @@ function control(e) {
                 new_y = (IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
 
                 newPos[i] = [new_x, new_y]; 
-
-                // console.log(`origin: ${current_origin}`)
-                // console.log(`originx: ${IC(current_origin)[0]} originy:${IC(current_origin)[1]}`)
-                // console.log(`x: ${new_x} y:${new_y}`)
             }
-            //call filtered here
-            //if bad, then fix bad
-            //if good, then make good
-
-            //if need filter
-            // console.log("rotated position: " + newPos);
             if (newPos.filter(function(el){
                 if(!checkPoint(el[0], el[1])){
                         return el;
@@ -508,24 +377,15 @@ function control(e) {
                         return false
                     }
                     }).length > 0){
-                    // console.log("a bad happened");
-                    //testing rotation
-                    //we have the newpoint
                     if((prev_state == 0 && new_state == 1)){
-                        // console.log("first ran")
                         newPos = easierRotationCheck(newPos, 0, rotationTests);
                     } else if((prev_state == 1 && new_state == 2)){
-                        // console.log("second ran")
                         newPos = easierRotationCheck(newPos, 1, rotationTests);
                     } else if((prev_state == 2 && new_state == 3)){
-                        // console.log("third ran")
                         newPos = easierRotationCheck(newPos, 2, rotationTests);
                     } else if((prev_state == 3 && new_state == 0)){
-                        // console.log("fourth ran")
-                        // console.log("Easier rotation: " + easierRotationCheck(newPos, 3));
                         newPos = easierRotationCheck(newPos, 3, rotationTests);
                     }
-                    // console.log("Block Position: " + newPos)
                     if(newPos){
                         for(var j = 0; j < 4; ++j){
                             currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
@@ -560,9 +420,7 @@ function control(e) {
                     new_y = (IC(currentPiece.currentPos[i])[0] - current_origin[0]) + current_origin[1];
                 }   
 
-                newPos[i] = [new_x, new_y]; 
-                // console.log(`newpos: ${newPos}`);
-                // console.log(`origin: ${current_origin}`);
+                newPos[i] = [new_x, new_y];
             }
 
             if (newPos.filter(function(el){
@@ -572,24 +430,15 @@ function control(e) {
                         return false
                     }
                     }).length > 0){
-                    // console.log("a bad happened");
-                    //testing rotation
-                    //we have the newpoint
                     if((prev_state == 0 && new_state == 1)){
-                        // console.log("first ran")
                         newPos = easierRotationCheck(newPos, 0, rotationI);
                     } else if((prev_state == 1 && new_state == 2)){
-                        // console.log("second ran")
                         newPos = easierRotationCheck(newPos, 1, rotationI);
                     } else if((prev_state == 2 && new_state == 3)){
-                        // console.log("third ran")
                         newPos = easierRotationCheck(newPos, 2, rotationI);
                     } else if((prev_state == 3 && new_state == 0)){
-                        // console.log("fourth ran")
-                        // console.log("Easier rotation: " + easierRotationCheck(newPos, 3));
                         newPos = easierRotationCheck(newPos, 3, rotationI);
                     }
-                    // console.log("Block Position: " + newPos)
                     if(newPos){
                         for(var j = 0; j < 4; ++j){
                             currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
@@ -608,24 +457,17 @@ function control(e) {
             squares[currentPiece.currentPos[i]].classList.add(`${currentPiece.name}`,"piece")
         }
     } else if(e.which === 90){ // z, rotating 90 degrees counterclockwise
-        //in srs, when the normal rotation is obstructed
-        //tests five different positions before it gives up
-        //there is a special place in hell for the I piece
         var new_x, new_y, k;
         var prev_state = currentPiece.state;
         var new_state;
         var newPos = [];
         var current_origin = [];
-        //if prev state is 0, then set newstate to 3 and then when new state is 2 set prev state to 3
         if(prev_state == 0){
             new_state = 3;
         } else {
             new_state = prev_state - 1;
         }
         currentPiece.state = new_state;
-        // console.log(`prevstate: ${prev_state}`)
-        // console.log(`newstate: ${new_state}`)
-
         if(currentPiece != line && currentPiece != square){
             for(var i = 0, len = currentPiece.currentPos.length; i < len; ++i){ //rotate all points around origin (defined in object)
                 squares[currentPiece.currentPos[i]].removeAttribute("class");
@@ -635,11 +477,6 @@ function control(e) {
 
                 newPos[i] = [new_x, new_y]; 
             }
-            //call filtered here
-            //if bad, then fix bad
-            //if good, then make good
-
-            //if need filter
             if (newPos.filter(function(el){
                 if(!checkPoint(el[0], el[1])){
                     return el;
@@ -647,24 +484,15 @@ function control(e) {
                     return false
                 }
                 }).length > 0){
-                // console.log("a bad happened");
-                //testing rotation
-                //we have the newpoint
                 if((prev_state == 2 && new_state == 1)){
-                    // console.log("first ran")
                     newPos = easierRotationCheck(newPos, 0, rotationTests);
                 } else if((prev_state == 1 && new_state == 0)){
-                    // console.log("second ran")
                     newPos = easierRotationCheck(newPos, 1, rotationTests);
                 } else if((prev_state == 0 && new_state == 3)){
-                    // console.log("third ran")
                     newPos = easierRotationCheck(newPos, 2, rotationTests);
                 } else if((prev_state == 3 && new_state == 2)){
-                    // console.log("fourth ran")
-                    // console.log("Easier rotation: " + easierRotationCheck(newPos, 3));
                     newPos = easierRotationCheck(newPos, 3, rotationTests);
                 }
-                // console.log("Block Position: " + newPos)
                 if(newPos){
                     for(var j = 0; j < 4; ++j){
                         currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
@@ -708,24 +536,15 @@ function control(e) {
                 return false
             }
             }).length > 0){
-            // console.log("a bad happened");
-            //testing rotation
-            //we have the newpoint
             if((prev_state == 3 && new_state == 2)){
-                // console.log("first ran")
                 newPos = easierRotationCheck(newPos, 0, rotationI);
             } else if((prev_state == 0 && new_state == 3)){
-                // console.log("second ran")
                 newPos = easierRotationCheck(newPos, 1, rotationI);
             } else if((prev_state == 1 && new_state == 0)){
-                // console.log("third ran")
                 newPos = easierRotationCheck(newPos, 2, rotationI);
             } else if((prev_state == 2 && new_state == 1)){
-                // console.log("fourth ran")
-                // console.log("Easier rotation: " + easierRotationCheck(newPos, 3));
                 newPos = easierRotationCheck(newPos, 3, rotationI);
             }
-            // console.log("Block Position: " + newPos)
             if(newPos){
                 for(var j = 0; j < 4; ++j){
                     currentPiece.currentPos[j] = IX(newPos[j][0], newPos[j][1]);
@@ -814,27 +633,6 @@ function control(e) {
     shadow();
 }
 
-// function defaultShadow(){
-//     var squares = document.querySelectorAll(".grid div");
-//     var impBlocks = returnImpBlocks(currentPiece.currentPos);
-
-//     var lowestDif = 20;
-//     for(var i = 0, len = impBlocks.length; i < len; ++i){
-//         for(var y = IC(impBlocks[i])[1] + 1; y <= 20; ++y){
-//             if(squares[IX(IC(impBlocks[i])[0], y)].classList.length == 1 || y == 20){
-//                 if(y - IC(impBlocks[i])[1] < lowestDif){
-//                     lowestDif = y - IC(impBlocks[i])[1];
-//                 }
-//             }
-//         }
-//     }
-    
-//     for(var i = 0; i < 4; i++){
-//         shadowPiece.currentPos.push(currentPiece.currentPos[i] + (lowestDif - 1) * 10);
-//     }
-//     shadowPiece.currentPos.forEach(index => squares[index].classList.add("shadow", `${currentPiece.name}`));
-// }
-
 function shadow(){
     var squares = document.querySelectorAll(".grid div");
     if(shadowPiece.currentPos.length != 0){
@@ -870,9 +668,6 @@ function shadow(){
         }
     });
 }
-//case 1: shadow is placed on spawned block, the new shadow goes where its supposed to, shadow overwrites current piece
-//case 2: shadow is placed where its supposed to, new shadow goes where its supposed to, nothing bad
-
 //this allows us to rewrite the hitboxes such that rotated blocks will still have hitboxes (theoretically)
 function checkDir(dir){
     var squares = document.querySelectorAll(".grid div");
@@ -880,7 +675,6 @@ function checkDir(dir){
     let right, left;
     let impBlocks = [];
     switch (dir){
-    //right-side imp blocks
     case "right":
         for(let i = bound[0]; i <= bound[1]; i++){ // between set block bound
             right = 0;
@@ -893,7 +687,6 @@ function checkDir(dir){
                 impBlocks.push(IX(right, i));
         }
         for(let i = 0; i < impBlocks.length; i++){
-            //check if blocks in impblocks ever hit a block / wall
             let blockIndex = currentPiece.currentPos.indexOf(impBlocks[i]);
             if(currentPiece.currentPos[blockIndex] % 10 == 9 || 
                 squares[currentPiece.currentPos[blockIndex] + 1].classList.contains("piece")){
@@ -915,7 +708,6 @@ function checkDir(dir){
                 impBlocks.push(IX(left, i));
         }
         for(let i = 0; i < impBlocks.length; i++){
-            //check if blocks in impblocks ever hit a block / wall
             let blockIndex = currentPiece.currentPos.indexOf(impBlocks[i]);
             if(currentPiece.currentPos[blockIndex] % 10 == 0 || 
                 squares[currentPiece.currentPos[blockIndex] - 1].classList.contains("piece")){
@@ -953,27 +745,6 @@ function TandBOfBlock(){
     }
     return [top, bottom];
 }
-//might not need randl
-
-// function RandLOfBlock(len, ){ //takes array of blocks?
-//     let right;
-//     let left;
-
-//     for(let i = 0; i < 4; i++){
-//         if(IC(currentPiece.currentPos[i])[0] < left || left == undefined){
-//             console.log(`new left is at ${IC(currentPiece.currentPos[i])[0]}`)
-//             left = IC(currentPiece.currentPos[i])[0];
-//         }
-//         else if(IC(currentPiece.currentPos[i])[0] > right || right == undefined){
-//             console.log(`new right is at ${IC(currentPiece.currentPos[i])[0]}`)
-//             right = IC(currentPiece.currentPos[i])[0];
-//         } 
-//     }
-
-//     console.log(`${left}, ${right}`)
-//     return [left, right];
-// }
-
 function repeat(){ 
     var squares = document.querySelectorAll(".grid div");
     if(checkDir("bottom")){
@@ -1006,14 +777,14 @@ function game(){
     document.getElementById("debug").onclick = function(){
         var squares = document.querySelectorAll(".grid div");
         if(debug_flag){
-                    for(let i = 0; i < 200; i++){
-            squares[i].removeChild(squares[i].firstChild);
-        }
+            for(let i = 0; i < 200; i++){
+                squares[i].removeChild(squares[i].firstChild);
+            }
         } else {
-                        for(let i = 0; i < 200; i++){
-            let content = document.createTextNode(i);
-            squares[i].appendChild(content);
-            squares[i].style.color = "white";
+            for(let i = 0; i < 200; i++){
+                let content = document.createTextNode(i);
+                squares[i].appendChild(content);
+                squares[i].style.color = "white";
             }
         }
         debug_flag = !debug_flag
@@ -1025,24 +796,3 @@ function game(){
 }
 
 game();
-
-
-// (function(){
-//     var flag = true;
-//     var squares = document.querySelectorAll(".grid div");
-//       if(flag)
-//       {
-//         for(let i = 0; i < 200; i++){
-//             squares[i].removeChild(squares[i].firstChild);
-//         }
-//       }
-//       else
-//         {
-//             for(let i = 0; i < 200; i++){
-//             let content = document.createTextNode(i);
-//             squares[i].appendChild(content);
-//             squares[i].style.color = "white";
-//             }
-//           flag = true;
-//         }
-//     }());
