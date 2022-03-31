@@ -48,6 +48,9 @@
 .square{
   background: rgb(229, 255, 0);
 }
+.shadow {
+  opacity: .5;
+}
 .revealed {
   background-image: url('portuguese-flag-6.gif');
   background-repeat: no-repeat;
